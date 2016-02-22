@@ -13,6 +13,7 @@ var getNewDataPoint = function() {
 	return NewData;
 };
 
+
 io.on('connection', function (socket) {
   setInterval(function () {
       socket.volatile.emit('new data', getNewDataPoint());

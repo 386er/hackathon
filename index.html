@@ -30,7 +30,7 @@ margin:auto;
 
 </style> 
  
-    <body>
+	<body>
 	
 		<div class="wrapper">
 
@@ -38,9 +38,18 @@ margin:auto;
 	
 		</div> 
 		
-        <script type="text/javascript">
+		<script type="text/javascript">
 		
 			var socket = io();
+
+
+			var getRandomRGB= function() {
+					var red = Math.floor((Math.random() * 256)).toString();
+					var green = Math.floor((Math.random() * 256)).toString();
+					var blue = Math.floor((Math.random() * 256)).toString();
+					var rgb = 'rgb(' + red + ',' + green +',' + blue +')';
+					return rgb;
+			};
 
 			var
 				width = 400,
@@ -58,24 +67,26 @@ margin:auto;
 							.append('circle')
 							.attr('cx', function(d) {return d.x})
 							.attr('cy', function(d) {return d.y})
-							.attr('r', 10);
+							.attr('r', 10)
+							.style('fill', getRandomRGB());
 
 
 			socket.on('new data', function(data){
-    			console.log('New Data: ', data);
+				console.log('New Data: ', data);
 
-    			circle.data([data]);
+				circle.data([data]);
 
 				circle.transition()
-	  				.duration(250)
+					.duration(250)
 					.attr('cx', function(d) {return d.x})
-					.attr('cy', function(d) {return d.y});
+					.attr('cy', function(d) {return d.y})
+					.style('fill', getRandomRGB());
 
 
 
-  			});			
+			});			
 
 
-        </script>
-    </body>
+		</script>
+	</body>
 </html>   
