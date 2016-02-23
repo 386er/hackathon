@@ -84,7 +84,11 @@ margin:auto;
 
 
 
-			});			
+			});		
+			socket.on('new gps', function(data){
+				console.log('New GPS: ', data);
+
+			});		
 
 
 		</script>
