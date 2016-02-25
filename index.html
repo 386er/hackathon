@@ -10,16 +10,17 @@
 
 body {
 background-color:white;
-overflow:hidden;	
+overflow:hidden;    
 }
 
 #rootElement {
 width:400px;
 height:400px;
-margin-top: 10%;
+margin-top: 1%;
 background-color:white;
 text-align: center;
-border: 1px solid gray;
+border: 1px solid #D8D8D8;
+border-radius:6px;
 }
 
 .wrapper {
@@ -28,20 +29,34 @@ position:relative;
 margin:auto;
 }
 
+.svgHeight {
+  font: 10px sans-serif;
+}
+.line {
+  fill: none;
+  stroke: red;
+  stroke-width: 1px;
+}
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #D8D8D8;
+  shape-rendering: crispEdges;
+}
+
 </style> 
  
 	<body>
 	
-		<div class="wrapper">
+		<!-- <div class="wrapper"> -->
 
 		<div id='rootElement'> </div> 
 	
-		</div> 
+		<!-- </div> --> 
 		
 		<script type="text/javascript">
 		
 			var socket = io();
-
 
 			var getRandomRGB= function() {
 					var red = Math.floor((Math.random() * 256)).toString();
@@ -50,6 +65,7 @@ margin:auto;
 					var rgb = 'rgb(' + red + ',' + green +',' + blue +')';
 					return rgb;
 			};
+
 
 			var
 				width = 400,
@@ -61,7 +77,50 @@ margin:auto;
 							 .attr("height", height);
 			
 
-			var circle = svg.selectAll('circle')
+			var createGrid = function(direction, n) {
+
+				var
+					gridData = _.range(1,n),
+					len = gridData.length,
+					hor = ['x1', 'y1', 'x2', 'y2'],
+					ver = ['y1', 'x1', 'y2', 'x2'],
+					dir = direction == 'horizontal'? hor:ver;
+
+				svg.selectAll(direction)
+					.data(gridData)
+					.enter()
+					.append('line')
+					.attr(dir[0], function(d) {return d *  (width/len )})
+					.attr(dir[1],0)
+					.attr(dir[2], function(d) {return d *  (width/len )})
+					.attr(dir[3],width)
+					.style('stroke', '#D8D8D8');
+			};
+
+			var createCircles = function(n) {
+				var 
+					circleData = _.range(1, n),
+					len = circleData.length;
+
+				svg.selectAll('circleplaceholder')
+					.data(circleData)
+					.enter()
+					.append('circle')
+					.attr('cx', width/2)
+					.attr('cy', height/2)
+					.attr( 'r', function(d) {return d *  (width/ len )})
+					.style('stroke', '#D8D8D8')
+					.style('fill', 'transparent');
+			};
+			
+
+			createGrid('horizontal', 11);
+			createGrid('vertical', 11);
+			createCircles(11);
+
+
+
+			var circle = svg.selectAll('circlePlaceholder')
 							.data([initialPos])
 							.enter()
 							.append('circle')
@@ -77,18 +136,101 @@ margin:auto;
 				circle.data([data]);
 
 				circle.transition()
-					.duration(250)
+					.duration(1000)
 					.attr('cx', function(d) {return d.x})
 					.attr('cy', function(d) {return d.y})
 					.style('fill', getRandomRGB());
 
 
 
-			});		
+			}); 
+			
 			socket.on('new gps', function(data){
 				console.log('New GPS: ', data);
 
-			});		
+			});     
+
+
+
+
+			var n = 40,
+				random = d3.random.normal(0, .3),
+				data = d3.range(n).map(random).map(Math.abs),
+				currentHeight = 0;
+			var margin = {top: 20, right: 20, bottom: 20, left: 40},
+				width = 960 - margin.left - margin.right,
+				height = 500 - margin.top - margin.bottom;
+			var x = d3.scale.linear()
+				.domain([0, n - 1])
+				.range([0, width]);
+			var y = d3.scale.linear()
+				.domain([0, 1])
+				.range([height, 0]);
+			var line = d3.svg.line()
+				.x(function(d, i) { return x(i); })
+				.y(function(d, i) { return y(d); });
+			var svgHeight = d3.select("body").append("svg").attr('class','svgHeight')
+				.attr("width", width + margin.left + margin.right)
+				.attr("height", height + margin.top + margin.bottom)
+			  .append("g")
+				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+				
+			svgHeight.append("defs").append("clipPath")
+				.attr("id", "clip")
+			  .append("rect")
+				.attr("width", width)
+				.attr("height", height);
+			svgHeight.append("g")
+				.attr("class", "x axis")
+				.attr("transform", "translate(0," + y(0) + ")")
+				.call(d3.svg.axis().scale(x).orient("bottom"));
+			svgHeight.append("g")
+				.attr("class", "y axis")
+				.call(d3.svg.axis().scale(y).orient("left"));
+			var path = svgHeight.append("g")
+				.attr("clip-path", "url(#clip)")
+			  .append("path")
+				.datum(data)
+				.attr("class", "line")
+				.attr("d", line);
+			
+
+
+
+			function tick() {
+			  // push a new data point onto the back
+			  data.push(currentHeight);
+			  // redraw the line, and slide it to the left
+			  path
+				  .attr("d", line)
+				  .attr("transform", null)
+				.transition()
+					.ease('linear')
+				  .duration(500)
+				  .attr("transform", "translate(" + x(-1) + ",0)")
+				  .each("end", tick);
+			  // pop the old data point off the front
+			  data.shift();
+			}
+	
+			tick();
+
+			socket.on('new height', function(height){
+				console.log('New Height: ', height);
+				currentHeight = height;
+			}); 
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 		</script>

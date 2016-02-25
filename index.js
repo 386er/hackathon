@@ -17,6 +17,8 @@ var subscription = topic.subscription('gps_subscription', {
 	interval: 10
 });
 
+var currentHeight = 0.5;
+
 var getRanNum = function() {
 	var ranNum = 5 + Math.random() * 390;
 	return ranNum;
@@ -26,6 +28,20 @@ var getNewDataPoint = function() {
 	var NewData = {'x':getRanNum(), 'y':getRanNum()}
 	return NewData;
 };
+
+
+var getHeightData = function() {
+
+	var ranNum = Math.random() ;
+
+	if (ranNum > 0.75) {
+		currentHeight = Math.random()
+	}
+
+	return currentHeight
+}
+
+
 
 
 io.on('connection', function (socket) {
@@ -69,7 +85,16 @@ io.on('connection', function (socket) {
 	});
   setInterval(function () {
       socket.volatile.emit('new data', getNewDataPoint());
-	}, 500);
+	}, 1500);
+
+
+  setInterval(function () {
+  		var height = getHeightData()
+  		console.log(height)
+    	socket.volatile.emit('new height', height);
+	}, 1000);
+
+
 });
 
 
