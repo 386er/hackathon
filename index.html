@@ -71,6 +71,7 @@ margin:auto;
 				width = 400,
 				height = 400,
 				initialPos = {'x':200,'y':200},
+				currentPos = initialPos,
 				rootElem = d3.select('#rootElement'),
 				svg  = rootElem.append('svg')
 							 .attr("width", width)
@@ -133,13 +134,38 @@ margin:auto;
 			socket.on('new data', function(data){
 				console.log('New Data: ', data);
 
+				var newPos = data;
 				circle.data([data]);
+
 
 				circle.transition()
 					.duration(1000)
 					.attr('cx', function(d) {return d.x})
 					.attr('cy', function(d) {return d.y})
 					.style('fill', getRandomRGB());
+
+
+				var line = svg.selectAll('linePlaceholder')
+					.data([initialPos])
+					.enter()
+					.append('line')
+					.attr('x1', function(d) {return d.x})
+					.attr('y1', function(d) {return d.y})
+					.attr('x2', function(d) {return d.x})
+					.attr('y2',function(d) {return  d.y})
+					.style('stroke', 'red')
+					.style('opacity', 0);
+
+				line.data([newPos])
+
+				line.transition()
+					.duration(1000)
+					.attr('x2', function(d) {return d.x})
+					.attr('y2', function(d) {return d.y})
+					.style('opacity', 1);
+
+				initialPos = newPos;
+					
 
 
 
@@ -155,7 +181,8 @@ margin:auto;
 
 			var n = 40,
 				random = d3.random.normal(0, .3),
-				data = d3.range(n).map(random).map(Math.abs),
+				//data = d3.range(n).map(random).map(Math.abs),				
+				data = d3.range(n).map(function(i) {return Math.pow(i,0)*0.5;}),
 				currentHeight = 0;
 			var margin = {top: 20, right: 20, bottom: 20, left: 40},
 				width = 960 - margin.left - margin.right,
