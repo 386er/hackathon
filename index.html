@@ -9,39 +9,111 @@
 <style>
 
 body {
-background-color:white;
+background-color:#f5f5f5;
 overflow:hidden;    
 }
 
 #rootElement {
-width:400px;
-height:400px;
+width:1800px;
+height:1800px;
 margin-top: 1%;
+margin:auto;
 background-color:white;
 text-align: center;
 border: 1px solid #D8D8D8;
 border-radius:6px;
+background-color:#f5f5f5;
 }
 
-.wrapper {
+
+.jerk {
+width:1800px;
+height:400px;
+
+border-radius:6px;
+}
+
+.trajectory {
 width:400px;
+height:400px;
 position:relative;
-margin:auto;
+float:left;
+margin-left:50px;
+border-left:1px solid #E2DFDF;
+border-radius:6px;
 }
 
-.svgHeight {
+.jerkTimeSeries {
+width:1300px;
+height:400px;
+position:relative;
+float:right;
+background-color:#f5f5f5;
+
+}
+
+.classifiation {
+width:1800px;
+height:600px;
+border-radius:6px;
+}
+
+
+
+.wrapperTimeSeries {
+width:900px;
+height:400px;
+position:relative;
+float:right;
+margin-right:50px;
+margin-top:50px;
+}
+
+.wrapperSpiderChart {
+width:550px;
+height:550px;
+position:relative;
+float:left;
+margin-left:120px;
+}
+
+.svgClassTimeSeries {
   font: 10px sans-serif;
 }
 .line {
-  fill: none;
-  stroke: red;
+  fill: transparent;
+  stroke: #717BC6;
   stroke-width: 1px;
 }
+
+.line1 {
+  fill: transparent;
+  stroke: 'black';
+  stroke-width: 1px;
+}
+.line2 {
+  fill: transparent;
+  stroke: 'blue';
+  stroke-width: 1px;
+}
+.line3 {
+  fill: transparent;
+  stroke: 'red';
+  stroke-width: 1px;
+}
+
+
+
 .axis path,
 .axis line {
-  fill: none;
+  fill: transparent;
   stroke: #D8D8D8;
   shape-rendering: crispEdges;
+}
+
+.label {
+  font-family: Arial;
+  font-size: 13px;
 }
 
 </style> 
@@ -50,13 +122,29 @@ margin:auto;
 	
 		<!-- <div class="wrapper"> -->
 
-		<div id='rootElement'> </div> 
+		<div id='rootElement'> 
+
+
+			<div class='jerk'>
+				<div class='trajectory'> </div> 
+				<div class='jerkTimeSeries'> </div> 
+			</div> 
+
+
+
+			<div class='classifiation'> 
+				<div class='wrapperSpiderChart'> </div> 
+				<div class='wrapperTimeSeries'> </div> 
+			</div> 
+
+		</div> 
 	
 		<!-- </div> --> 
 		
 		<script type="text/javascript">
 		
 			var socket = io();
+
 
 			var getRandomRGB= function() {
 					var red = Math.floor((Math.random() * 256)).toString();
@@ -68,14 +156,14 @@ margin:auto;
 
 
 			var
-				width = 400,
-				height = 400,
+				widthTract = 400,
+				heightTract = 400,
 				initialPos = {'x':200,'y':200},
+				lineContainer = [],
 				currentPos = initialPos,
-				rootElem = d3.select('#rootElement'),
-				svg  = rootElem.append('svg')
-							 .attr("width", width)
-							 .attr("height", height);
+				svgTract  = d3.select('.trajectory').append('svg')
+							 .attr("width", widthTract)
+							 .attr("height", heightTract);
 			
 
 			var createGrid = function(direction, n) {
@@ -87,14 +175,14 @@ margin:auto;
 					ver = ['y1', 'x1', 'y2', 'x2'],
 					dir = direction == 'horizontal'? hor:ver;
 
-				svg.selectAll(direction)
+				svgTract.selectAll(direction)
 					.data(gridData)
 					.enter()
 					.append('line')
-					.attr(dir[0], function(d) {return d *  (width/len )})
+					.attr(dir[0], function(d) {return d *  (widthTract/len )})
 					.attr(dir[1],0)
-					.attr(dir[2], function(d) {return d *  (width/len )})
-					.attr(dir[3],width)
+					.attr(dir[2], function(d) {return d *  (widthTract/len )})
+					.attr(dir[3],widthTract)
 					.style('stroke', '#D8D8D8');
 			};
 
@@ -103,13 +191,13 @@ margin:auto;
 					circleData = _.range(1, n),
 					len = circleData.length;
 
-				svg.selectAll('circleplaceholder')
+				svgTract.selectAll('circleplaceholder')
 					.data(circleData)
 					.enter()
 					.append('circle')
-					.attr('cx', width/2)
-					.attr('cy', height/2)
-					.attr( 'r', function(d) {return d *  (width/ len )})
+					.attr('cx', widthTract/2)
+					.attr('cy', heightTract/2)
+					.attr( 'r', function(d) {return d *  (widthTract/ len )})
 					.style('stroke', '#D8D8D8')
 					.style('fill', 'transparent');
 			};
@@ -121,18 +209,28 @@ margin:auto;
 
 
 
-			var circle = svg.selectAll('circlePlaceholder')
+			var circle = svgTract.selectAll('circlePlaceholder')
 							.data([initialPos])
 							.enter()
 							.append('circle')
 							.attr('cx', function(d) {return d.x})
 							.attr('cy', function(d) {return d.y})
-							.attr('r', 10)
-							.style('fill', getRandomRGB());
+							.attr('r', 6)
+							.style('fill', '#5F04B4');
 
 
 			socket.on('new data', function(data){
+
 				console.log('New Data: ', data);
+				if (lineContainer.length > 5) {
+					lineContainer[0]
+						.transition()
+						.duration(1000)
+						.style('opacity',0)
+						.each('end', function() {this.remove()});
+					lineContainer.shift();	
+
+				}
 
 				var newPos = data;
 				circle.data([data]);
@@ -141,11 +239,10 @@ margin:auto;
 				circle.transition()
 					.duration(1000)
 					.attr('cx', function(d) {return d.x})
-					.attr('cy', function(d) {return d.y})
-					.style('fill', getRandomRGB());
+					.attr('cy', function(d) {return d.y});
 
 
-				var line = svg.selectAll('linePlaceholder')
+				var line = svgTract.selectAll('linePlaceholder')
 					.data([initialPos])
 					.enter()
 					.append('line')
@@ -153,7 +250,7 @@ margin:auto;
 					.attr('y1', function(d) {return d.y})
 					.attr('x2', function(d) {return d.x})
 					.attr('y2',function(d) {return  d.y})
-					.style('stroke', 'red')
+					.style('stroke', '#5F04B4')
 					.style('opacity', 0);
 
 				line.data([newPos])
@@ -165,6 +262,7 @@ margin:auto;
 					.style('opacity', 1);
 
 				initialPos = newPos;
+				lineContainer.push(line);
 					
 
 
@@ -179,14 +277,21 @@ margin:auto;
 
 
 
+			// ####################################
+			// ####################################
+			// ####################################
+			// Time Series
+
+
+
 			var n = 40,
 				random = d3.random.normal(0, .3),
 				//data = d3.range(n).map(random).map(Math.abs),				
 				data = d3.range(n).map(function(i) {return Math.pow(i,0)*0.5;}),
 				currentHeight = 0;
 			var margin = {top: 20, right: 20, bottom: 20, left: 40},
-				width = 960 - margin.left - margin.right,
-				height = 500 - margin.top - margin.bottom;
+				width = 900 - margin.left - margin.right,
+				height = 400 - margin.top - margin.bottom;
 			var x = d3.scale.linear()
 				.domain([0, n - 1])
 				.range([0, width]);
@@ -195,33 +300,34 @@ margin:auto;
 				.range([height, 0]);
 			var line = d3.svg.line()
 				.x(function(d, i) { return x(i); })
-				.y(function(d, i) { return y(d); });
-			var svgHeight = d3.select("body").append("svg").attr('class','svgHeight')
+				.y(function(d, i) { return y(d); })
+
+			var svgClassTimeSeries = d3.select(".wrapperTimeSeries").append("svg").attr('class','svgClassTimeSeries')
 				.attr("width", width + margin.left + margin.right)
 				.attr("height", height + margin.top + margin.bottom)
 			  .append("g")
 				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 				
-			svgHeight.append("defs").append("clipPath")
+			svgClassTimeSeries.append("defs").append("clipPath")
 				.attr("id", "clip")
 			  .append("rect")
 				.attr("width", width)
 				.attr("height", height);
-			svgHeight.append("g")
+			svgClassTimeSeries.append("g")
 				.attr("class", "x axis")
 				.attr("transform", "translate(0," + y(0) + ")")
 				.call(d3.svg.axis().scale(x).orient("bottom"));
-			svgHeight.append("g")
+			svgClassTimeSeries.append("g")
 				.attr("class", "y axis")
 				.call(d3.svg.axis().scale(y).orient("left"));
-			var path = svgHeight.append("g")
+			var path = svgClassTimeSeries.append("g")
 				.attr("clip-path", "url(#clip)")
 			  .append("path")
 				.datum(data)
 				.attr("class", "line")
 				.attr("d", line);
-			
 
+			
 
 
 			function tick() {
@@ -238,14 +344,413 @@ margin:auto;
 				  .each("end", tick);
 			  // pop the old data point off the front
 			  data.shift();
+
+
 			}
+
 	
 			tick();
+
+
+			// ####################################
+			// ####################################
+			// ####################################
+			// Jerk Chhart
+				
+				width = 1300 - margin.left - margin.right,
+				x = d3.scale.linear()
+				.domain([0, n - 1])
+				.range([0, width]);
+
+
+			var svgJerTimeSeries = d3.select(".jerkTimeSeries").append("svg").attr('class','svgClassTimeSeries')
+				.attr("width", width + margin.left + margin.right)
+				.attr("height", height + margin.top + margin.bottom)
+			  .append("g")
+				.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+				
+			svgJerTimeSeries.append("defs").append("clipPath")
+				.attr("id", "clip")
+			  .append("rect")
+				.attr("width", width)
+				.attr("height", height);
+			svgJerTimeSeries.append("g")
+				.attr("class", "x axis")
+				.attr("transform", "translate(0," + y(0) + ")")
+				.call(d3.svg.axis().scale(x).orient("bottom"));
+			svgJerTimeSeries.append("g")
+				.attr("class", "y axis")
+				.call(d3.svg.axis().scale(y).orient("left"));
+
+
+
+				//data = d3.range(n).map(random).map(Math.abs),				
+			var	
+				data1 = d3.range(n).map(function(i) {return Math.pow(i,0)*0.3;}),
+				data2 = d3.range(n).map(function(i) {return Math.pow(i,0)*0.7;}),
+				data3 = d3.range(n).map(function(i) {return Math.pow(i,0)*0.5;});
+
+
+			var pathJerk1 = svgJerTimeSeries.append("g")
+				.attr("clip-path", "url(#clip)")
+			  .append("path")
+				.datum(data1)
+				.attr("class", "line1")
+				.attr("d", line)
+				.attr('stroke', 'black');
+
+			var pathJerk2 = svgJerTimeSeries.append("g")
+				.attr("clip-path", "url(#clip)")
+			  .append("path")
+				.datum(data2)
+				.attr("class", "line2")
+				.attr("d", line)
+				.attr('stroke', 'green');
+
+			var pathJerk3 = svgJerTimeSeries.append("g")
+				.attr("clip-path", "url(#clip)")
+			  .append("path")
+				.datum(data3)
+				.attr("class", "line3")
+				.attr("d", line)
+				.attr('stroke', 'blue');
+
+
+			function tickJerk1() {
+
+
+			  // push a new data point onto the back
+			  data1.push(Math.random());
+
+			  // redraw the line, and slide it to the left
+			  pathJerk1
+				  .attr("d", line)
+				  .attr("transform", null)
+				.transition()
+					.ease('linear')
+				  .duration(500)
+				  .attr("transform", "translate(" + x(-1) + ",0)")
+				  .each("end", tickJerk1);
+
+				
+
+			  // pop the old data point off the front
+			  data1.shift();
+			}
+
+	
+			tickJerk1();
+
+
+			function tickJerk2() {
+
+
+			  // push a new data point onto the back
+			  data2.push(Math.random());
+
+			  // redraw the line, and slide it to the left
+			  pathJerk2
+				  .attr("d", line)
+				  .attr("transform", null)
+				.transition()
+					.ease('linear')
+				  .duration(500)
+				  .attr("transform", "translate(" + x(-1) + ",0)")
+				  .each("end", tickJerk2);
+
+				
+
+			  // pop the old data point off the front
+			  data2.shift();
+			}
+
+	
+			tickJerk2();
+
+			function tickJerk3() {
+
+
+			  // push a new data point onto the back
+			  data3.push(Math.random());
+
+			  // redraw the line, and slide it to the left
+			  pathJerk3
+				  .attr("d", line)
+				  .attr("transform", null)
+				.transition()
+					.ease('linear')
+				  .duration(500)
+				  .attr("transform", "translate(" + x(-1) + ",0)")
+				  .each("end", tickJerk3);
+
+				
+
+			  // pop the old data point off the front
+			  data3.shift();
+			}
+
+	
+			tickJerk3();
+
+
+
+			// ####################################
+			// ####################################
+			// ####################################
+			// Spider Chart
+
+
 
 			socket.on('new height', function(height){
 				console.log('New Height: ', height);
 				currentHeight = height;
 			}); 
+
+
+
+			var widthSpider = 600;
+			var heightSpider = 600;
+
+var svgSpider = d3.select('.wrapperSpiderChart')
+.append('svg')
+.attr('width', widthSpider)
+.attr('height', heightSpider);
+
+var baseX = widthSpider/2;
+var baseY = heightSpider/2;
+var baseIntervall = widthSpider/6;
+
+      
+  
+var getY = function(degrees, x) {
+  
+		var 
+    	radians = degrees * (Math.PI/180),
+  		y = Math.tan(radians) * x
+    
+    return baseY - y;  
+};
+  
+var getCircleData = function(size) {
+
+	var circleData = [{'x': baseX + size, 'y':getY(60, size)},
+  									{'x': baseX + size*2, 'y':getY(180, size)},
+                    {'x': baseX + size, 'y':getY(120, size)},
+                    {'x': baseX - size, 'y':getY(240, -size)},
+                    {'x': baseX - size*2, 'y':getY(360, -size)},
+                    {'x': baseX - size, 'y':getY(300, -size)}]
+
+	return circleData;
+
+};
+
+
+var drawHexagon = function(r) {
+	var 
+  	coordinates = getCircleData(r),
+  	len = coordinates.length;
+  
+  for (i = 0; i < len; i++) {      
+    var next = (i + 1)%len;    
+  	svgSpider.append('line')
+    		.attr('x1', coordinates[i].x)
+        .attr('y1', coordinates[i].y)
+        .attr('x2', coordinates[next].x)
+        .attr('y2', coordinates[next].y)
+        .style('stroke', 'gray')
+  			.style('stroke-width',0.5);
+  	}	
+};
+
+
+var drawAxis = function(r) {
+	var 
+  	coordinates = getCircleData(r),
+  	len = coordinates.length;
+    
+   	for (i = 0; i < len ; i++) {         
+      svgSpider.append('line')
+          .attr('x1', baseX)
+          .attr('y1', baseY)
+          .attr('x2', coordinates[i].x)
+          .attr('y2', coordinates[i].y)
+          .style('stroke', 'black')
+          .style('stroke-width',0.5);
+  	}	
+}
+
+var labels = ['1', '2','3','4', '5', '6']
+
+var drawLabels = function(r) {
+	var 
+  	coordinates = getCircleData(r),
+  	len = coordinates.length;
+   	for (i = 0; i < len; i++) {         
+      svgSpider.append('text')
+      		.text(labels[i])
+          .attr('class','label')
+          .attr('x', coordinates[i].x - 15)
+          .attr('y', coordinates[i].y + 5)
+  	}	
+}
+
+
+createXScales = function() {
+	var 
+  	scales = {},
+    len = labels.length,
+    scalesData = [ function (x) { return  baseX + x },
+                   function (x) { return  baseX + x*2 },
+                   function (x) { return baseX + x},
+                   function (x) { return baseX - x}, 
+                   function (x) { return baseX - x*2},
+                   function (x) { return baseX - x}]
+  
+  for(var i = 0; i< len; i++) {
+  	scales[labels[i]] = scalesData[i]
+
+	}
+  
+  return scales;
+
+}
+
+createYScales = function() {
+	var 
+  	scales = {},
+    len = labels.length,
+    scalesData = [   function (x) { return getY(60, x)},
+                     function (x) { return getY(180, x)},
+                     function (x) { return getY(120, x)},
+                     function (x) { return getY(240, -x)},
+                     function (x) { return getY(360, -x)},
+                     function (x) { return getY(300, -x)}]
+  
+  for(var i = 0; i< len; i++) {
+  	scales[labels[i]] = scalesData[i]
+
+	}
+  
+  return scales;
+
+};
+
+
+
+
+
+
+
+drawHexagon(25)
+drawHexagon(50)
+drawHexagon(75)
+drawHexagon(100)
+drawHexagon(120)
+drawAxis(120)
+drawLabels(140)
+var Xscale = createXScales();
+var Yscale = createYScales();
+
+var circleData = [{'label':'1','x':20}, 
+									{'label':'2','x':60},
+                  {'label':'3','x':10},
+                  {'label':'4','x':100},
+                  {'label':'5','x':80},
+                  {'label':'6','x':40}]
+ 
+
+/*
+
+var circles = 	svg.selectAll('circle')
+  	.data(circleData)
+    .enter()
+    .append('circle')
+    .attr('cx', function(d) {return Xscale[d.label](d.x)})
+    .attr('cy', function(d) {return Yscale[d.label](d.x)})
+    .attr('r', 5)
+    .style('fill', 'blue')
+    
+ */   
+  
+var createRandomData = function() {
+
+var random = [{'label':'1','x':Math.random()*120}, 
+									{'label':'2','x':Math.random()*120},
+                  {'label':'3','x':Math.random()*120},
+                  {'label':'4','x':Math.random()*120},
+                  {'label':'5','x':Math.random()*120},
+                  {'label':'6','x':Math.random()*120}]
+                  
+    return random;              
+}
+
+
+
+var createPolygonData = function() {
+
+	var random = createRandomData();
+	var polydata = random.map(function(obj) {	
+    return {'x':Xscale[obj.label](obj.x),'y':Yscale[obj.label](obj.x),'label':obj.label};
+ 
+  })
+  
+  return polydata;
+}
+
+
+var polygon = svgSpider.selectAll("polygon")
+    						.data([createPolygonData()])
+  							.enter()
+                .append("polygon")
+    						.attr("points",function(d) {
+                console.log(d)
+        					return d.map(function(d) {
+            				return [d.x,d.y].join(",");
+                    }).join(" ");
+                })
+                .attr("stroke","blue")
+                .attr('fill', 'blue')
+                .attr('opacity', 0.6)
+                .attr('stroke-opacity',1)
+                .attr("stroke-width",2);
+
+
+
+var trafficLight= function() {
+
+	var ranNum = Math.random();
+
+	if (ranNum < 0.33) {
+		return 'green';
+	} else if ( ranNum < 0.66) {
+		return 'yellow';
+	} else {
+		return 'red';
+	}
+
+}
+
+
+
+
+
+setInterval(function(){
+
+	var col = trafficLight();
+
+polygon.data([createPolygonData()])
+				.transition()
+        .duration(1000)
+        .attr('fill', col)
+        .attr('stroke', col)
+        .attr("points",function(d) {
+                console.log(d)
+        					return d.map(function(d) {
+            				return [d.x,d.y].join(",");
+                    }).join(" ");
+                })
+        
+}, 2000)
 
 
 
